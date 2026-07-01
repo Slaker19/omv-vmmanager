@@ -1,0 +1,118 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      # Stamp the version + build time into the binary so the
+      # running container reports its real identity in
+      # /api/system/version and the structured logs. VMMANAGER_VERSION
+      # is normally set by CI from git describe; locally you can
+      # export it before `docker compose build` and it'll flow
+      # through. BUILD_TIME is set automatically by CI.
+      args:
+        VERSION: ${VMMANAGER_VERSION:-dev}
+        BUILD_TIME: ${VMMANAGER_BUILD_TIME:-unknown}
+    image: omv-vmmanager-backend:latest
+    container_name: omv-vmmanager-backend
+    privileged: true
+    # host network: the container shares the host's network namespace
+    # so /api/host/interfaces sees enp6s18/enp6s19/br0 and ip link add can
+    # create bridges that the host can actually use. Privileged mode
+    # alone isn't enough — netlink is namespace-scoped, so even with
+    # CAP_NET_ADMIN the container couldn't manipulate the host's
+    # interfaces. Trade-off: Docker's port mapping is disabled (port
+    # 8080 binds directly on the host), and the container's loopback
+    # is now the host's loopback, so VNC_PROXY_HOST=127.0.0.1 works.
+    network_mode: host
+    volumes:
+      # libvirt control surface (read-only socket, writable state dir).
+      - /var/run/libvirt:/var/run/libvirt
+      - /var/lib/libvirt:/var/lib/libvirt
+      # omv-vmmanager data dir. On OMV hosts this is
+      # /opt/openmediavault/vmmanager; on bare-metal it's
+      # /opt/omv-vmmanager. Pick whichever the host uses.
+      # On OMV, share a single read-write mount so both the
+      # containers and OMV's PHP backend can write to the same data.
+      - ${VMMANAGER_DATA_DIR:-/opt/omv-vmmanager}:${VMMANAGER_DATA_DIR:-/opt/omv-vmmanager}
+      # SMB backup mount (configured on the host in /etc/fstab; we
+      # only bind-mount it so the backup script inside the container
+      # writes to the same share the operator sees). The script in
+      # /usr/local/bin/vmmanager-backup.sh is copied into the image
+      # by the Dockerfile; the mount itself must be active on the
+      # host before the script can run.
+      - /mnt/vmmanager-backup:/mnt/vmmanager-backup
+    environment:
+      - PORT=8080
+      # Bind on loopback so the Caddy sidecar (also on host
+      # network) is the only ingress. Same hardening as the
+      # systemd unit.
+      - BIND_ADDR=127.0.0.1
+      - LIBVIRT_URI=qemu:///system
+      - DATA_DIR=${VMMANAGER_DATA_DIR:-/opt/omv-vmmanager}
+      # When set, the backend also tees every log record to this file
+      # (same path /api/system/logs reads back). The default points
+      # inside DATA_DIR so the log is included in the regular
+      # backup and survives container restarts.
+      - VMMANAGER_LOG_FILE=${VMMANAGER_DATA_DIR:-/opt/omv-vmmanager}/logs/backend.log
+      # VNC_PROXY_HOST is where the backend opens a TCP connection
+      # to reach libvirt's VNC port. With network_mode=host, the
+      # container's 127.0.0.1 IS the host's 127.0.0.1 (qemu binds VNC
+      # on 0.0.0.0 there), so the default 127.0.0.1 is correct.
+      - VNC_PROXY_HOST=127.0.0.1
+      # PUBLIC_HOST is the IP baked into SPICE (.vv) files the user
+      # downloads. It must be reachable from the user's
+      # browser/client machine, not from inside the container. Set
+      # this to the host's LAN IP so that the generated console files
+      # actually point somewhere the user can dial. If you keep the
+      # default (empty), the backend falls back to the first
+      # non-loopback IPv4 of the running process, which inside the
+      # container is now a host interface address (usually fine but
+      # ambiguous). RDP files use the VM's own libvirt-assigned IP
+      # via GetDomainIP, so they don't need this override.
+      - PUBLIC_HOST=${PUBLIC_HOST:-}
+    restart: unless-stopped
+    # Docker-level health check (independent of the in-process
+    # /api/health handler). Probes the same endpoint on the host's
+    # loopback every 10s, considers unhealthy after 3 failures. The
+    # deploy script waits for "healthy" before returning so a bad
+    # build never replaces the old container.
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-m", "2", "http://127.0.0.1:8080/api/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+  # Caddy reverse-proxy with self-signed TLS.
+  # - :80  -> 301 redirect to https
+  # - :443 -> reverse proxy to 127.0.0.1:8080 (the backend)
+  #
+  # Uses the official caddy:2 image (Debian-based, ~50MB) with
+  # network_mode: host so the proxy binds directly on the LAN.
+  # The Caddyfile is bind-mounted from the host so operators can
+  # tweak it without rebuilding the image. `tls internal` makes
+  # Caddy generate a self-signed cert on the first request — no
+  # certbot, no DNS challenge. Browsers will warn the first time;
+  # the operator clicks through once.
+  caddy:
+    image: caddy:2
+    container_name: omv-vmmanager-caddy
+    network_mode: host
+    volumes:
+      - ./scripts/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Self-signed cert: bind-mounted from ./certs/ on the host
+      # (created by scripts/generate-self-signed.sh on the first
+      # deploy). The container is read-only-root; we can't run the
+      # gen script inside, so the cert must exist on the host.
+      - ./certs/vmmanager.crt:/etc/caddy/certs/vmmanager.crt:ro
+      - ./certs/vmmanager.key:/etc/caddy/certs/vmmanager.key:ro
+      - caddy_data:/data        # cert cache (kept across restarts)
+      - caddy_config:/config    # Caddy runtime state
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  caddy_data:
+  caddy_config:

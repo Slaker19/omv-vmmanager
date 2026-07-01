@@ -1,0 +1,12 @@
+openmediavault-vmmanager (1.0.0) stable; urgency=low
+
+  * Initial release of the OMV 8 plugin for omv-vmmanager.
+  * Wraps the Go backend (libvirt/KVM VM management) as a native
+    OMV service with confdb integration, Salt state, and workbench
+    UI (navigation, settings form, embedded UI page, dashboard widget).
+  * Auth bridge: pre-shared API key persists in
+    /etc/openmediavault-vmmanager/apikey.key.
+  * Reverse-proxy at /vmmanager/ via nginx so the webUI is embeddable
+    in an iframe inside the OMV workbench.
+
+ -- omv-vmmanager <alvinpp1908@gmail.com>  Sat, 29 Jun 2026 18:00:00 +0200

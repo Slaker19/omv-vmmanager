@@ -1,0 +1,8 @@
+version: "1.0"
+type: route
+data:
+  url: "/services/vmmanager/storage"
+  title: _("Storage")
+  editing: true
+  notificationTitle: _("Storage settings updated.")
+  component: omv-services-vmmanager-storage-form-page

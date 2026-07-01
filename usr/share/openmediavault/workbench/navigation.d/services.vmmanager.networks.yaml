@@ -1,0 +1,8 @@
+version: "1.0"
+type: navigation-item
+data:
+  path: "services.vmmanager.networks"
+  text: _("Networks")
+  position: 55
+  icon: mdi:lan
+  url: "/services/vmmanager/networks"

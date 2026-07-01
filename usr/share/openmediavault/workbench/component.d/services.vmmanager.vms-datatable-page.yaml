@@ -1,0 +1,120 @@
+version: "1.0"
+type: component
+data:
+  name: omv-services-vmmanager-vms-datatable-page
+  type: datatablePage
+  config:
+    autoReload: 10000
+    hasSearchField: true
+    stateId: d5e7f8a9-0b1c-2d3e-4f5a-6b7c8d9e0f1a
+    rowId: id
+    store:
+      proxy:
+        service: VmManager
+        get:
+          method: getVmList
+    columns:
+      - name: _("Name")
+        prop: name
+        flexGrow: 2
+        sortable: true
+      - name: _("State")
+        prop: state
+        flexGrow: 1
+        sortable: true
+      - name: _("vCPUs")
+        prop: vcpus
+        width: 80
+        sortable: true
+      - name: _("RAM")
+        prop: ram
+        width: 100
+        sortable: true
+      - name: _("OS")
+        prop: osversion
+        flexGrow: 1
+        sortable: true
+      - name: _("Autostart")
+        prop: autostart
+        width: 100
+        sortable: true
+    actions:
+      - type: iconButton
+        icon: mdi:play
+        tooltip: _("Start")
+        execute:
+          type: request
+          request:
+            service: VmManager
+            method: vmCommand
+            params:
+              id: "{{ _selected[0].id }}"
+              command: "start"
+            progressMessage: _("Starting VM ...")
+            successNotification: _("VM has been started.")
+            task: false
+        enabledConstraints:
+          minSelected: 1
+          maxSelected: 1
+          constraint:
+            - operator: ne
+              arg0:
+                prop: state
+              arg1: "running"
+      - type: iconButton
+        icon: mdi:stop
+        tooltip: _("Stop")
+        execute:
+          type: request
+          request:
+            service: VmManager
+            method: vmCommand
+            params:
+              id: "{{ _selected[0].id }}"
+              command: "stop"
+            progressMessage: _("Stopping VM ...")
+            successNotification: _("VM has been stopped.")
+            task: false
+        enabledConstraints:
+          minSelected: 1
+          maxSelected: 1
+          constraint:
+            - operator: eq
+              arg0:
+                prop: state
+              arg1: "running"
+      - type: iconButton
+        icon: mdi:restart
+        tooltip: _("Force Reboot")
+        execute:
+          type: request
+          request:
+            service: VmManager
+            method: vmCommand
+            params:
+              id: "{{ _selected[0].id }}"
+              command: "forcereboot"
+            progressMessage: _("Force rebooting VM ...")
+            successNotification: _("VM force reboot has been issued.")
+            task: false
+        enabledConstraints:
+          minSelected: 1
+          maxSelected: 1
+          constraint:
+            - operator: eq
+              arg0:
+                prop: state
+              arg1: "running"
+      - type: iconButton
+        icon: delete
+        tooltip: _("Delete")
+        execute:
+          type: request
+          request:
+            service: VmManager
+            method: vmCommand
+            params:
+              id: "{{ _selected[0].id }}"
+              command: "delete"
+            progressMessage: _("Deleting VM ...")
+            successNotification: _("VM has been deleted.")

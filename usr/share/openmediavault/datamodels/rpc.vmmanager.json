@@ -1,0 +1,269 @@
+[
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.getsettings",
+    "params": {}
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.setsettings",
+    "params": {
+      "type": "object",
+      "properties": {
+        "enable":            { "type": "boolean" },
+        "httpsMode":         { "type": "string", "enum": ["none","managed"] },
+        "httpsPort":         { "type": "integer", "minimum": 1024, "maximum": 65535 },
+        "sslcertificateref": { "type": "string" },
+        "dataDir":           { "type": "string", "maxLength": 256 },
+        "port":              { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "bind":              { "type": "string", "maxLength": 15 }
+      }
+    }
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.getstatus",
+    "params": {}
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.getservicestatus",
+    "params": {}
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.getuiurl",
+    "params": {}
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.restartservice",
+    "params": {}
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.getlogs",
+    "params": {
+      "type": "object",
+      "properties": {
+        "lines": { "type": "integer", "default": 100, "minimum": 1, "maximum": 10000 }
+      }
+    }
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.gethoststats",
+    "params": {}
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.listvms",
+    "params": {}
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.liststoragepools",
+    "params": {}
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.listnetworks",
+    "params": {}
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.getnetworklist",
+    "params": {
+      "type": "object",
+      "properties": {
+        "start":      { "type": "integer", "required": true },
+        "limit":      { "type": [ "integer", "null" ], "required": true },
+        "sortfield":  { "type": [ "string", "null" ] },
+        "sortdir":    { "type": [ "string", "null" ], "enum": [ "asc", "ASC", "desc", "DESC" ] },
+        "search":     { "type": [ "string", "integer", "null" ] }
+      }
+    }
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.getnetwork",
+    "params": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "required": true, "maxLength": 64, "pattern": "^[A-Za-z0-9_.-]+$" }
+      }
+    }
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.updatenetwork",
+    "params": {
+      "type": "object",
+      "properties": {
+        "name":          { "type": "string", "required": true, "maxLength": 64, "pattern": "^[A-Za-z0-9_.-]+$" },
+        "forward":       { "type": "string", "required": true, "enum": ["nat","route","open","isolated"] },
+        "macaddress":    { "type": "string", "maxLength": 17 },
+        "gatewayip":     { "type": "string", "maxLength": 15 },
+        "subnet":        { "type": "string", "maxLength": 15 },
+        "dhcp":          { "type": "boolean" },
+        "startaddress":  { "type": "string", "maxLength": 15 },
+        "endaddress":    { "type": "string", "maxLength": 15 }
+      }
+    }
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.setnetwork",
+    "params": {
+      "type": "object",
+      "properties": {
+        "name":          { "type": "string", "required": true, "maxLength": 64, "pattern": "^[A-Za-z0-9_.-]+$" },
+        "forward":       { "type": "string", "required": true, "enum": ["nat","route","open","isolated"] },
+        "macaddress":    { "type": "string", "maxLength": 17 },
+        "gatewayip":     { "type": "string", "maxLength": 15 },
+        "subnet":        { "type": "string", "maxLength": 15 },
+        "dhcp":          { "type": "boolean" },
+        "startaddress":  { "type": "string", "maxLength": 15 },
+        "endaddress":    { "type": "string", "maxLength": 15 }
+      }
+    }
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.setbridgenetwork",
+    "params": {
+      "type": "object",
+      "properties": {
+        "name":   { "type": "string", "required": true, "maxLength": 64, "pattern": "^[A-Za-z0-9_.-]+$" },
+        "bridge": { "type": "string", "required": true, "maxLength": 15 }
+      }
+    }
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.setmacvtap",
+    "params": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "required": true, "maxLength": 64, "pattern": "^[A-Za-z0-9_.-]+$" },
+        "nic":  { "type": "string", "required": true, "maxLength": 15 },
+        "mode": { "type": "string", "enum": ["bridge","vepa","private","passthrough"] }
+      }
+    }
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.networkcommand",
+    "params": {
+      "type": "object",
+      "properties": {
+        "name":    { "type": "string", "required": true, "maxLength": 64 },
+        "command": { "type": "string", "required": true, "enum": ["start","stop","delete"] }
+      }
+    }
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.enumeratebridges",
+    "params": {}
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.putnetworkxml",
+    "params": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "required": true },
+        "netxml": { "type": "string", "required": true }
+      }
+    }
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.networkname",
+    "params": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "required": true }
+      }
+    }
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.vmcommand",
+    "params": {
+      "type": "object",
+      "properties": {
+        "id":      { "type": "string", "required": true, "maxLength": 64 },
+        "command": { "type": "string", "required": true, "enum": ["start", "stop", "shutdown", "reboot", "forcereboot", "suspend", "resume", "delete"] }
+      }
+    }
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.poolname",
+    "params": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "required": true, "maxLength": 64, "pattern": "^[A-Za-z0-9_.-]+$" }
+      }
+    }
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.getpoollist",
+    "params": {
+      "type": "object",
+      "properties": {
+        "start":     { "type": "integer", "required": true },
+        "limit":     { "type": [ "integer", "null" ], "required": true },
+        "sortfield": { "type": [ "string", "null" ] },
+        "sortdir":   { "type": [ "string", "null" ], "enum": [ "asc", "ASC", "desc", "DESC" ] },
+        "search":    { "type": [ "string", "integer", "null" ] }
+      }
+    }
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.createpool",
+    "params": {
+      "type": "object",
+      "properties": {
+        "name":            { "type": "string", "required": true, "maxLength": 64, "pattern": "^[A-Za-z0-9_.-]+$" },
+        "type":            { "type": "string", "required": true, "enum": ["dir", "netfs"] },
+        "path":            { "type": "string", "required": true, "maxLength": 4096 },
+        "purpose":         { "type": "string", "enum": ["disk", "iso"] },
+        "source_host":     { "type": "string", "maxLength": 255 },
+        "source_dir":      { "type": "string", "maxLength": 4096 },
+        "source_format":   { "type": "string", "enum": ["nfs", "cifs"] },
+        "source_username": { "type": "string", "maxLength": 64 },
+        "source_password": { "type": "string", "maxLength": 128 }
+      }
+    }
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.updatepool",
+    "params": {
+      "type": "object",
+      "properties": {
+        "name":             { "type": "string", "required": true, "maxLength": 64, "pattern": "^[A-Za-z0-9_.-]+$" },
+        "path":             { "type": "string", "maxLength": 4096 },
+        "source_username":  { "type": "string", "maxLength": 64 },
+        "source_password":  { "type": "string", "maxLength": 128 },
+        "cifs_needs_reauth":{ "type": "boolean" }
+      }
+    }
+  },
+  {
+    "type": "rpc",
+    "id": "rpc.vmmanager.poolcommand",
+    "params": {
+      "type": "object",
+      "properties": {
+        "name":    { "type": "string", "required": true, "maxLength": 64, "pattern": "^[A-Za-z0-9_.-]+$" },
+        "command": { "type": "string", "required": true, "enum": ["start", "stop", "refresh", "delete", "fixpermissions"] }
+      }
+    }
+  }
+]

@@ -1,0 +1,8 @@
+version: "1.0"
+type: navigation-item
+data:
+  path: "services.vmmanager"
+  text: _("Virtual Machines")
+  icon: "mdi:server"
+  position: 50
+  url: "/services/vmmanager"

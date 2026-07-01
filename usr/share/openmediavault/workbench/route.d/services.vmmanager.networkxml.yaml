@@ -1,0 +1,8 @@
+version: "1.0"
+type: route
+data:
+  url: "/services/vmmanager/networkxml/{{ query.name }}"
+  title: _("Edit network '{{ query.name }}'")
+  editing: true
+  notificationTitle: _("Network has been updated.")
+  component: omv-services-vmmanager-networkxml-edit-page

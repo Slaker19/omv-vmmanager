@@ -1,0 +1,13 @@
+usr/sbin/omv-vmmanager                                   usr/sbin
+usr/lib/systemd/system/omv-vmmanager.service              usr/lib/systemd/system
+usr/share/openmediavault/engined/rpc/vmmanager.inc        usr/share/openmediavault/engined/rpc
+usr/share/openmediavault/engined/module/vmmanager.inc      usr/share/openmediavault/engined/module
+usr/share/openmediavault/engined/inc/90vmmanager.inc        usr/share/openmediavault/engined/inc
+usr/share/openmediavault/datamodels/rpc.vmmanager.json     usr/share/openmediavault/datamodels
+usr/share/openmediavault/datamodels/conf.service.vmmanager.json usr/share/openmediavault/datamodels
+usr/share/openmediavault/workbench/component.d/*.yaml      usr/share/openmediavault/workbench/component.d
+usr/share/openmediavault/workbench/navigation.d/*.yaml     usr/share/openmediavault/workbench/navigation.d
+usr/share/openmediavault/workbench/route.d/*.yaml          usr/share/openmediavault/workbench/route.d
+usr/share/openmediavault/workbench/dashboard.d/*.yaml      usr/share/openmediavault/workbench/dashboard.d
+usr/share/openmediavault/confdb/create.d/*.sh              usr/share/openmediavault/confdb/create.d
+srv/salt/omv/deploy/vmmanager/*                            srv/salt/omv/deploy/vmmanager

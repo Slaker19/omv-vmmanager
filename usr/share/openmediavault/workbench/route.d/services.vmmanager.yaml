@@ -1,0 +1,6 @@
+version: "1.0"
+type: route
+data:
+  url: "/services/vmmanager"
+  title: _("Virtual Machines")
+  component: omv-services-vmmanager-navigation-page

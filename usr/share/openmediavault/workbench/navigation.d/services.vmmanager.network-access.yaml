@@ -1,0 +1,8 @@
+version: "1.0"
+type: navigation-item
+data:
+  path: "services.vmmanager.network-access"
+  text: _("Network Access")
+  position: 20
+  icon: mdi:network
+  url: "/services/vmmanager/network-access"

@@ -1,0 +1,55 @@
+# Lefthook config for webVM
+# Docs: https://lefthook.dev/configuration/
+#
+# After cloning:
+#   go install github.com/evilmartians/lefthook@latest
+#   export LEFTHOOK_BIN=$HOME/go/bin/lefthook  # git hooks run in a restricted PATH
+#   lefthook install
+#
+# Hooks fire on `git commit` and `git push`. Failing hooks block
+# the commit/push so you fix issues locally instead of waiting
+# for CI to tell you.
+
+# git hooks run in a restricted environment, so PATH may not
+# include ~/go/bin. Export the common Go-binary locations so
+# the commands lefthook spawns (gofmt, go, etc.) can be found.
+env:
+  PATH: $PATH:$HOME/go/bin:/usr/local/go/bin
+
+pre-commit:
+  parallel: true
+  commands:
+    backend_fmt:
+      glob: "backend/**/*.go"
+      run: cd backend && gofmt -l {staged_files} | (! grep .)
+
+    backend_tidy:
+      glob: "backend/go.mod"
+      run: cd backend && go mod tidy && git diff --exit-code go.mod go.sum
+
+    frontend_format:
+      glob: "frontend/**/*.{js,ts,svelte,json,css}"
+      run: cd frontend && npx prettier --check {staged_files}
+
+    # Note: golangci-lint and eslint are intentionally NOT in the
+    # pre-commit hook — they're slow and CI runs them on every
+    # push. Run locally with:
+    #   cd backend && golangci-lint run
+    #   cd frontend && npm run lint
+
+commit-msg:
+  commands:
+    # Soft check: just warn (don't block). Strict mode would
+    # require conventional commits, but we want to keep iteration
+    # fast.
+    no_fixup:
+      run: "[ \"$(git log -1 --pretty=%s)\" != \"fixup!\" ]"
+
+pre-push:
+  parallel: true
+  commands:
+    backend_test:
+      run: cd backend && go test -race -count=1 ./internal/audit/... ./internal/auth/... ./internal/events/...
+
+    frontend_build:
+      run: cd frontend && npm run build

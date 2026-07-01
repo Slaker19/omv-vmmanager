@@ -1,0 +1,449 @@
+version: "1.0"
+type: component
+data:
+  name: omv-services-vmmanager-network-datatable-page
+  type: datatablePage
+  config:
+    autoReload: 10000
+    hasSearchField: true
+    stateId: a1b2c3d4-5e6f-7890-abcd-ef1234567890
+    rowId: netname
+    store:
+      proxy:
+        service: VmManager
+        get:
+          method: getNetworkList
+    columns:
+      - name: _("Network Name")
+        prop: netname
+        flexGrow: 1
+        sortable: true
+      - name: _("Network State")
+        prop: active
+        flexGrow: 1
+        sortable: true
+      - name: _("Gateway IP")
+        prop: ip
+        flexGrow: 1
+        sortable: true
+      - name: _("IP Range")
+        prop: iprange
+        flexGrow: 2
+        sortable: true
+      - name: _("Forwarding")
+        prop: forward
+        flexGrow: 2
+        sortable: true
+      - name: _("DHCP Range")
+        prop: dhcp
+        flexGrow: 2
+        sortable: true
+    actions:
+      - type: menu
+        icon: mdi:plus
+        tooltip: _("Add")
+        actions:
+          - text: _("Add network")
+            icon: mdi:plus-network
+            execute:
+              type: formDialog
+              formDialog:
+                title: _('Add network ...')
+                fields:
+                  - type: textInput
+                    name: name
+                    label: _("Name")
+                    value: ''
+                    validators:
+                      required: true
+                      minLength: 1
+                      patternType: 'shareName'
+                    hint: _("Libvirt network name - alphanumeric, dot, dash, underscore. Must be unique.")
+
+                  - type: select
+                    name: forward
+                    label: _("Forwarding")
+                    value: "nat"
+                    store:
+                      data:
+                        - ["nat", _("NAT")]
+                        - ["route", _("Routed")]
+                        - ["open", _("Open")]
+                        - ["isolated", _("Isolated")]
+                    hint: _("NAT/Routed require a subnet and gateway. Open/Isolated do not (the network has no host-side IP).")
+
+                  - type: select
+                    name: subnet
+                    label: _("Subnet mask")
+                    value: "255.255.255.0"
+                    validators:
+                      required: true
+                    store:
+                      data:
+                        - ["255.255.255.0", "/24 --> 255.255.255.0"]
+                        - ["255.255.255.128", "/25 --> 255.255.255.128"]
+                        - ["255.255.255.192", "/26 --> 255.255.255.192"]
+                        - ["255.255.255.224", "/27 --> 255.255.255.224"]
+                        - ["255.255.255.240", "/28 --> 255.255.255.240"]
+                        - ["255.255.255.248", "/29 --> 255.255.255.248"]
+                        - ["255.255.255.252", "/30 --> 255.255.255.252"]
+                    modifiers:
+                      - type: visible
+                        constraint:
+                          operator: in
+                          arg0:
+                            prop: forward
+                          arg1: ["nat", "route"]
+                    hint: _("Required for NAT and Routed. Must NOT overlap with the host's network or any existing libvirt network (the form rejects overlaps).")
+
+                  - type: textInput
+                    name: gatewayip
+                    label: _("Gateway IP address")
+                    validators:
+                      required: true
+                      patternType: 'ipv4'
+                    modifiers:
+                      - type: visible
+                        constraint:
+                          operator: in
+                          arg0:
+                            prop: forward
+                          arg1: ["nat", "route"]
+                    hint: _("Gateway IP within the chosen subnet (e.g. 192.168.100.1 for 192.168.100.0/24). This is what the VMs will use as their default route.")
+
+                  - type: checkbox
+                    name: dhcp
+                    label: _("DHCP")
+                    value: false
+                    modifiers:
+                      - type: visible
+                        constraint:
+                          operator: in
+                          arg0:
+                            prop: forward
+                          arg1: ["nat", "route"]
+
+                  - type: textInput
+                    name: startaddress
+                    label: _("DHCP starting address")
+                    validators:
+                      required: true
+                      patternType: 'ipv4'
+                    modifiers:
+                      - type: visible
+                        constraint:
+                          operator: truthy
+                          arg0:
+                            prop: dhcp
+                    hint: _("Must be inside the chosen subnet and less than the ending address.")
+
+                  - type: textInput
+                    name: endaddress
+                    label: _("DHCP ending address")
+                    validators:
+                      required: true
+                      patternType: 'ipv4'
+                    modifiers:
+                      - type: visible
+                        constraint:
+                          operator: truthy
+                          arg0:
+                            prop: dhcp
+                    hint: _("Must be inside the chosen subnet and greater than the starting address.")
+
+                  - type: textInput
+                    name: macaddress
+                    label: _("MAC address (optional)")
+                    validators:
+                      maxLength: 17
+                    hint: _("Optional. MAC of the libvirt network interface. Leave blank for auto-generated.")
+                buttons:
+                  submit:
+                    text: _('Add')
+                    execute:
+                      type: request
+                      request:
+                        service: VmManager
+                        method: setNetwork
+                        progressMessage: _("Adding a network ...")
+                        successNotification: _("Network has been added.")
+                        task: false
+          - text: _("Add macvtap network")
+            icon: mdi:plus-network-outline
+            execute:
+              type: formDialog
+              formDialog:
+                title: _('Add macvtap network ...')
+                fields:
+                  - type: textInput
+                    name: name
+                    label: _("Name")
+                  - type: select
+                    name: nic
+                    label: _('Network adapter')
+                    textField: devicename
+                    valueField: devicename
+                    store:
+                      proxy:
+                        service: Network
+                        get:
+                          method: enumerateDevices
+                  - type: select
+                    name: mode
+                    label: _("Mode")
+                    value: "bridge"
+                    store:
+                      data:
+                        - ["bridge", _("Bridge")]
+                        - ["vepa", _("VEPA")]
+                        - ["private", _("Private")]
+                        - ["passthrough", _("Passthrough")]
+                    hint: _("Passthrough dedicates the adapter to a single guest at a time; use Bridge to share it among several guests.")
+                buttons:
+                  submit:
+                    text: _('Add')
+                    execute:
+                      type: request
+                      request:
+                        service: VmManager
+                        method: setMacvtap
+                        progressMessage: _("Adding a macvtap network ...")
+                        successNotification: _("macvtap network has been added.")
+                        task: false
+          - text: _("Add bridge network")
+            icon: mdi:lan
+            execute:
+              type: formDialog
+              formDialog:
+                title: _('Add bridge network ...')
+                fields:
+                  - type: textInput
+                    name: name
+                    label: _("Name")
+                    validators:
+                      required: true
+                      patternType: 'shareName'
+                  - type: select
+                    name: bridge
+                    label: _('Bridge')
+                    textField: bridge
+                    valueField: bridge
+                    store:
+                      proxy:
+                        service: VmManager
+                        get:
+                          method: enumerateBridges
+                    validators:
+                      required: true
+                    hint: _("Hands guests directly onto an existing host bridge.")
+                buttons:
+                  submit:
+                    text: _('Add')
+                    execute:
+                      type: request
+                      request:
+                        service: VmManager
+                        method: setBridgeNetwork
+                        progressMessage: _("Adding a bridge network ...")
+                        successNotification: _("Bridge network has been added.")
+                        task: false
+      - type: iconButton
+        icon: mdi:xml
+        tooltip: _("Edit XML")
+        execute:
+          type: url
+          url: "/services/vmmanager/networkxml/{{ _selected[0].netname }}"
+        enabledConstraints:
+          minSelected: 1
+          maxSelected: 1
+      - type: iconButton
+        icon: edit
+        tooltip: _("Edit")
+        execute:
+          type: formDialog
+          formDialog:
+            title: _('Edit network ...')
+            get:
+              proxy:
+                service: VmManager
+                get:
+                  method: getNetwork
+                  params:
+                    name: "{{ _selected[0].netname }}"
+            fields:
+              - type: textInput
+                name: name
+                label: _("Name")
+                readonly: true
+                hint: _("Network name cannot be changed. Delete and recreate instead.")
+
+              - type: select
+                name: forward
+                label: _("Forwarding")
+                store:
+                  data:
+                    - ["nat", _("NAT")]
+                    - ["route", _("Routed")]
+                    - ["open", _("Open")]
+                    - ["isolated", _("Isolated")]
+                hint: _("Changing the forward mode will restart the network.")
+
+              - type: select
+                name: subnet
+                label: _("Subnet mask")
+                store:
+                  data:
+                    - ["255.255.255.0", "/24 --> 255.255.255.0"]
+                    - ["255.255.255.128", "/25 --> 255.255.255.128"]
+                    - ["255.255.255.192", "/26 --> 255.255.255.192"]
+                    - ["255.255.255.224", "/27 --> 255.255.255.224"]
+                    - ["255.255.255.240", "/28 --> 255.255.255.240"]
+                    - ["255.255.255.248", "/29 --> 255.255.255.248"]
+                    - ["255.255.255.252", "/30 --> 255.255.255.252"]
+                modifiers:
+                  - type: visible
+                    constraint:
+                      operator: in
+                      arg0:
+                        prop: forward
+                      arg1: ["nat", "route"]
+
+              - type: textInput
+                name: gatewayip
+                label: _("Gateway IP address")
+                validators:
+                  patternType: 'ipv4'
+                modifiers:
+                  - type: visible
+                    constraint:
+                      operator: in
+                      arg0:
+                        prop: forward
+                      arg1: ["nat", "route"]
+
+              - type: checkbox
+                name: dhcp
+                label: _("DHCP")
+                value: false
+                modifiers:
+                  - type: visible
+                    constraint:
+                      operator: in
+                      arg0:
+                        prop: forward
+                      arg1: ["nat", "route"]
+
+              - type: textInput
+                name: startaddress
+                label: _("DHCP starting address")
+                validators:
+                  patternType: 'ipv4'
+                modifiers:
+                  - type: visible
+                    constraint:
+                      operator: truthy
+                      arg0:
+                        prop: dhcp
+
+              - type: textInput
+                name: endaddress
+                label: _("DHCP ending address")
+                validators:
+                  patternType: 'ipv4'
+                modifiers:
+                  - type: visible
+                    constraint:
+                      operator: truthy
+                      arg0:
+                        prop: dhcp
+
+              - type: textInput
+                name: macaddress
+                label: _("MAC address (optional)")
+                validators:
+                  maxLength: 17
+                hint: _("Optional. MAC of the libvirt network interface. Leave blank for auto-generated.")
+            buttons:
+              submit:
+                text: _('Save')
+                execute:
+                  type: request
+                  request:
+                    service: VmManager
+                    method: updateNetwork
+                    progressMessage: _("Updating network ...")
+                    successNotification: _("Network has been updated.")
+                    task: false
+        enabledConstraints:
+          minSelected: 1
+          maxSelected: 1
+      - type: iconButton
+        icon: delete
+        tooltip: _("Delete")
+        execute:
+          type: request
+          request:
+            service: VmManager
+            method: networkCommand
+            params:
+              command: "delete"
+              name: "{{ _selected[0].netname }}"
+            progressMessage: _("Deleting a network ...")
+            successNotification: _("Network has been deleted.")
+        enabledConstraints:
+          minSelected: 1
+          maxSelected: 1
+          constraint:
+            - operator: ne
+              arg0:
+                prop: active
+              arg1: "Active"
+      - type: menu
+        icon: mdi:rotate-left
+        tooltip: _("State")
+        enabledConstraints:
+          minSelected: 1
+          maxSelected: 1
+        actions:
+          - text: _("Start")
+            icon: mdi:arrow-up-bold-outline
+            execute:
+              type: request
+              request:
+                service: VmManager
+                method: networkCommand
+                params:
+                  name: "{{ _selected[0].netname }}"
+                  command: "start"
+                progressMessage: _("Starting network ...")
+                successNotification: _("Network has been started.")
+                task: false
+            enabledConstraints:
+              minSelected: 1
+              maxSelected: 1
+              constraint:
+                - operator: ne
+                  arg0:
+                    prop: active
+                  arg1: "Active"
+          - text: _("Stop")
+            icon: mdi:arrow-down-bold-outline
+            execute:
+              type: request
+              request:
+                service: VmManager
+                method: networkCommand
+                params:
+                  name: "{{ _selected[0].netname }}"
+                  command: "stop"
+                progressMessage: _("Stopping network ...")
+                successNotification: _("Network has been stopped.")
+                task: false
+            enabledConstraints:
+              minSelected: 1
+              maxSelected: 1
+              constraint:
+                - operator: eq
+                  arg0:
+                    prop: active
+                  arg1: "Active"

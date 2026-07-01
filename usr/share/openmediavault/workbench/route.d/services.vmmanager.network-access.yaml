@@ -1,0 +1,8 @@
+version: "1.0"
+type: route
+data:
+  url: "/services/vmmanager/network-access"
+  title: _("Network Access")
+  editing: true
+  notificationTitle: _("Network access settings updated.")
+  component: omv-services-vmmanager-network-access-form-page

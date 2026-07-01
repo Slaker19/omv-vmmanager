@@ -1,0 +1,30 @@
+# Go build context for backend image — keep it small.
+.git
+.gitignore
+.dockerignore
+*.md
+LICENSE.md
+
+# Frontend
+frontend/
+
+# Tests / CI
+*.test
+*.out
+coverage.*
+.github/
+.vscode/
+.idea/
+
+# Local dev artifacts
+backend/omv-vmmanager
+backend/webvm-backend
+backend/webvm-backend.log
+backend/omv-vmmanager.log
+backend/internal/frontend/dist/
+backend/projecto-backend
+backend/server
+
+# OS
+.DS_Store
+Thumbs.db

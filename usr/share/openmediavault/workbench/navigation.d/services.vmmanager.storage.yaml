@@ -1,0 +1,8 @@
+version: "1.0"
+type: navigation-item
+data:
+  path: "services.vmmanager.storage"
+  text: _("Storage")
+  position: 25
+  icon: mdi:database
+  url: "/services/vmmanager/storage"

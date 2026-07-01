@@ -1,0 +1,59 @@
+[Unit]
+Description=OMV VM Manager Backend (libvirt management + embedded Svelte frontend)
+Documentation=https://github.com/omv-vmmanager/omv-vmmanager
+After=libvirtd.service virtlogd.service network-online.target openmediavault-engined.service
+Wants=libvirtd.service virtlogd.service network-online.target
+# On OMV hosts we want the webUI bridge (Caddy) to start before us so
+# the OMV plugin's "Open UI" link is reachable when the backend is.
+
+[Service]
+Type=simple
+User=root
+Group=root
+# Repo and data dirs can be overridden by /etc/default/omv-vmmanager
+# (sourced via EnvironmentFile). The OMV .deb ships that file with
+# DATA_DIR=/opt/openmediavault/vmmanager; bare-metal installs use
+# the defaults below.
+EnvironmentFile=-/etc/default/omv-vmmanager
+# Defaults if EnvironmentFile is missing.
+Environment=DATA_DIR=/opt/omv-vmmanager
+Environment=REPO_DIR=/opt/omv-vmmanager/source
+# Bind on loopback only — the front-end (Caddy on :443, or the
+# OMV webUI on :80) is the only thing that should reach the
+# backend. Operators running without a front proxy can override
+# this with a drop-in setting BIND_ADDR=0.0.0.0.
+Environment=BIND_ADDR=127.0.0.1
+# Go's multipart parser and os.CreateTemp use os.Tmpdir() (= $TMPDIR).
+# On many distros /tmp is a small tmpfs; /var/tmp is on the root
+# filesystem and has room for multi-GB uploads.
+Environment=TMPDIR=/var/tmp
+WorkingDirectory=/opt/openmediavault/vmmanager
+ExecStart=/usr/sbin/omv-vmmanager
+# Reload is intentionally a no-op — config is loaded once at startup.
+
+# Auto-restart on failure; brief backoff to avoid tight loops.
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+LimitNOFILE=65536
+
+# Logs go through journald. The companion logrotate file is a no-op
+# (missingok) and is kept only for installations that switch to file
+# logging via an override.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=omv-vmmanager
+
+# Hardening. The backend must run as root to read libvirt-owned image
+# files, so we explicitly grant the required paths and isolate the rest.
+# The set of writable paths is intentionally narrow; if you need to
+# import VMs from extra locations, drop a drop-in or set DATA_DIR
+# accordingly and add the parent to ReadWritePaths.
+NoNewPrivileges=false
+ProtectSystem=full
+ProtectHome=read-only
+PrivateTmp=true
+ReadWritePaths=/opt/omv-vmmanager /opt/openmediavault /var/lib/libvirt /var/tmp
+
+[Install]
+WantedBy=multi-user.target

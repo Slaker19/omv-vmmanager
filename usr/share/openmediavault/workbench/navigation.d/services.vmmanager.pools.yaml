@@ -1,0 +1,8 @@
+version: "1.0"
+type: navigation-item
+data:
+  path: "services.vmmanager.pools"
+  text: _("Pools")
+  position: 30
+  icon: mdi:server
+  url: "/services/vmmanager/pools"

@@ -1,0 +1,18 @@
+# Root-level: never send these to any build context.
+backend/omv-vmmanager
+backend/webvm-backend
+backend/projecto-backend
+backend/server
+backend/internal/frontend/dist/
+backend/omv-vmmanager.log
+backend/webvm-backend.log
+frontend/node_modules/
+frontend/.svelte-kit/
+*.log
+/tmp/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo

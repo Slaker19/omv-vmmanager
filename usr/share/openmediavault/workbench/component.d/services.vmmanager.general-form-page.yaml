@@ -1,0 +1,92 @@
+version: "1.0"
+type: component
+data:
+  name: omv-services-vmmanager-general-form-page
+  type: formPage
+  config:
+    request:
+      service: VmManager
+      get:
+        method: getServiceStatus
+      post:
+        method: setSettings
+    fields:
+      - type: checkbox
+        name: enable
+        label: _("Enable service")
+        hint: _("Master switch for the OMV VM Manager backend. When disabled, the service stops and the UI is not accessible.")
+
+      - type: divider
+        title: _("Service status")
+
+      - type: textInput
+        name: running_label
+        label: _("Service state")
+        readonly: true
+        disabled: true
+        submitValue: false
+        hint: _("Reflects the actual systemd state of omv-vmmanager.service.")
+
+      - type: textInput
+        name: version
+        label: _("Backend version")
+        readonly: true
+        disabled: true
+        submitValue: false
+
+      - type: textInput
+        name: uptime
+        label: _("Uptime")
+        readonly: true
+        disabled: true
+        submitValue: false
+
+      - type: textInput
+        name: libvirt
+        label: _("Libvirt connection")
+        readonly: true
+        disabled: true
+        submitValue: false
+
+      - type: textInput
+        name: pools_count
+        label: _("Storage pools")
+        readonly: true
+        disabled: true
+        submitValue: false
+
+      - type: divider
+        title: _("Network endpoints")
+
+      - type: textInput
+        name: backendPort
+        label: _("Backend API port")
+        readonly: true
+        hint: _("Internal Go backend port. Not exposed externally - traffic goes through the OMV reverse proxy.")
+
+      - type: textInput
+        name: httpsPort
+        label: _("HTTPS frontend port")
+        readonly: true
+        hint: _("Public HTTPS port for the VM Manager web UI. Change in 'Network Access'.")
+
+      - type: textInput
+        name: httpsMode
+        label: _("HTTPS mode")
+        readonly: true
+        disabled: true
+
+    buttons:
+      - text: _("Open UI")
+        enabledConstraint:
+          operator: truthy
+          arg0:
+            prop: enable
+        execute:
+          type: url
+          url: "/externalRedirect/{% if httpsMode == 'managed' %}https{% else %}http{% endif %}{{ ['://', location() | get('hostname'), ':', httpsPort, '/'] | join | encodeuricomponent }}"
+      - template: submit
+      - template: cancel
+        execute:
+          type: url
+          url: "/services/vmmanager"

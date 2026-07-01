@@ -1,0 +1,39 @@
+#!/bin/sh
+set -e
+. /etc/default/openmediavault
+. /usr/share/openmediavault/scripts/helper-functions
+
+case "$1" in
+    purge)
+        # Stop and disable the service.
+        systemctl disable --now omv-vmmanager.service 2>/dev/null || :
+
+        # Remove API key and confdb data.
+        rm -f /etc/openmediavault-vmmanager/apikey.key
+        rm -rf /etc/openmediavault-vmmanager
+
+        # Remove the confdb root.
+        omv_config_delete "/config/services/vmmanager" 2>/dev/null || :
+
+        # Remove nginx drop-in.
+        rm -f /etc/nginx/openmediavault-webgui.d/openmediavault-vmmanager.conf
+        systemctl reload nginx 2>/dev/null || true
+
+        # Remove systemd drop-in.
+        rm -rf /etc/systemd/system/omv-vmmanager.service.d
+        systemctl daemon-reload 2>/dev/null || true
+
+        # Refresh the OMV workbench (entries disappear without the YAMLs).
+        dpkg-trigger update-workbench
+        ;;
+
+    remove)
+        # Stop/disable but keep DATA_DIR and confdb — reinstall restores them.
+        systemctl disable --now omv-vmmanager.service 2>/dev/null || :
+        dpkg-trigger update-workbench
+        ;;
+
+    upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+        ;;
+esac
+exit 0

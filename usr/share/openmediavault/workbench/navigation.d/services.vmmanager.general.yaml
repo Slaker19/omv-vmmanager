@@ -1,0 +1,8 @@
+version: "1.0"
+type: navigation-item
+data:
+  path: "services.vmmanager.general"
+  text: _("General")
+  position: 10
+  icon: mdi:cog
+  url: "/services/vmmanager/general"

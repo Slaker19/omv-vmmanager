@@ -1,0 +1,8 @@
+version: "1.0"
+type: navigation-item
+data:
+  path: "services.vmmanager.vms"
+  text: _("VMs")
+  position: 25
+  icon: mdi:desktop-classic
+  url: "/services/vmmanager/vms"

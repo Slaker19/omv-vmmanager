@@ -1,0 +1,23 @@
+# Frontend build context — keep it small.
+.git
+.gitignore
+.dockerignore
+*.md
+LICENSE.md
+
+# Built artifacts (will be produced inside the image)
+node_modules/
+dist/
+.svelte-kit/
+
+# Tests / CI
+*.test
+*.out
+coverage.*
+.github/
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

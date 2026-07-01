@@ -1,0 +1,8 @@
+version: "1.0"
+type: route
+data:
+  url: "/services/vmmanager/general"
+  title: _("General")
+  editing: true
+  notificationTitle: _("Service settings updated.")
+  component: omv-services-vmmanager-general-form-page

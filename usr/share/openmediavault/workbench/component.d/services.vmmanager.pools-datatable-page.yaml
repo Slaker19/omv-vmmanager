@@ -1,0 +1,279 @@
+version: "1.0"
+type: component
+data:
+  name: omv-services-vmmanager-pools-datatable-page
+  type: datatablePage
+  config:
+    autoReload: 10000
+    hasSearchField: true
+    stateId: b2c3d4e5-6f7a-4b8c-9d0e-1f2a3b4c5d6e
+    rowId: name
+    store:
+      proxy:
+        service: VmManager
+        get:
+          method: getPoolList
+    columns:
+      - name: _("Name")
+        prop: name
+        flexGrow: 1
+        sortable: true
+      - name: _("Purpose")
+        prop: purpose
+        flexGrow: 1
+        sortable: true
+      - name: _("Type")
+        prop: type
+        flexGrow: 1
+        sortable: true
+      - name: _("Path")
+        prop: path
+        flexGrow: 2
+        sortable: true
+      - name: _("State")
+        prop: state
+        flexGrow: 1
+        sortable: true
+      - name: _("Autostart")
+        prop: autostart
+        flexGrow: 1
+        sortable: true
+        cellTemplateName: checkIcon
+      - name: _("Capacity")
+        prop: capacity
+        flexGrow: 1
+        sortable: true
+        cellTemplateName: binaryUnit
+      - name: _("Allocated")
+        prop: allocated
+        flexGrow: 1
+        sortable: true
+        cellTemplateName: binaryUnit
+      - name: _("Available")
+        prop: available
+        flexGrow: 1
+        sortable: true
+        cellTemplateName: binaryUnit
+    actions:
+      - type: menu
+        icon: mdi:plus
+        tooltip: _("Add")
+        actions:
+          - text: _("Add directory pool")
+            icon: mdi:folder-plus
+            execute:
+              type: formDialog
+              formDialog:
+                title: _('Add directory pool ...')
+                fields:
+                  - type: textInput
+                    name: name
+                    label: _("Name")
+                    validators:
+                      required: true
+                      patternType: 'shareName'
+                    hint: _("Libvirt pool name (alphanumeric, dot, dash, underscore; up to 64 chars)")
+                  - type: select
+                    name: purpose
+                    label: _("Purpose")
+                    value: "disk"
+                    store:
+                      data:
+                        - ["disk", _("Disk (VM volumes)")]
+                        - ["iso", _("ISO (installation media)")]
+                    hint: _("Disk pools hold VM virtual disks. ISO pools hold installation media only.")
+                  - type: textInput
+                    name: path
+                    label: _("Path")
+                    validators:
+                      required: true
+                    hint: _("Absolute path on the host where pool files live. The directory will be created if missing.")
+                buttons:
+                  submit:
+                    text: _('Add')
+                    execute:
+                      type: request
+                      request:
+                        service: VmManager
+                        method: createPool
+                        params:
+                          name: "{{ name }}"
+                          type: "dir"
+                          path: "{{ path }}"
+                          purpose: "{{ purpose }}"
+                        progressMessage: _("Adding directory pool ...")
+                        successNotification: _("Directory pool has been added.")
+          - text: _("Add network filesystem pool")
+            icon: mdi:server-network
+            execute:
+              type: formDialog
+              formDialog:
+                title: _('Add network filesystem pool ...')
+                fields:
+                  - type: textInput
+                    name: name
+                    label: _("Name")
+                    validators:
+                      required: true
+                      patternType: 'shareName'
+                  - type: select
+                    name: source_format
+                    label: _("Format")
+                    value: "nfs"
+                    store:
+                      data:
+                        - ["nfs", _("NFS")]
+                        - ["cifs", _("CIFS / SMB")]
+                    hint: _("CIFS requires a username and password; NFS does not.")
+                  - type: textInput
+                    name: source_host
+                    label: _("Host")
+                    validators:
+                      required: true
+                    hint: _("Hostname or IP of the NFS / CIFS server.")
+                  - type: textInput
+                    name: source_dir
+                    label: _("Export / share path")
+                    validators:
+                      required: true
+                    hint: _("Exported directory on the remote host (NFS) or share name (CIFS).")
+                  - type: textInput
+                    name: path
+                    label: _("Local mount path")
+                    validators:
+                      required: true
+                    hint: _("Where libvirt mounts the share on this host. Will be created if missing.")
+                  - type: select
+                    name: purpose
+                    label: _("Purpose")
+                    value: "disk"
+                    store:
+                      data:
+                        - ["disk", _("Disk (VM volumes)")]
+                        - ["iso", _("ISO (installation media)")]
+                  - type: textInput
+                    name: source_username
+                    label: _("CIFS username")
+                    value: ""
+                    modifiers:
+                      - type: visible
+                        constraint:
+                          operator: eq
+                          arg0:
+                            prop: source_format
+                          arg1: cifs
+                  - type: passwordInput
+                    name: source_password
+                    label: _("CIFS password")
+                    value: ""
+                    modifiers:
+                      - type: visible
+                        constraint:
+                          operator: eq
+                          arg0:
+                            prop: source_format
+                          arg1: cifs
+                    hint: _("CIFS credentials are stored in a libvirt secret. They are never returned by the API.")
+                buttons:
+                  submit:
+                    text: _('Add')
+                    execute:
+                      type: request
+                      request:
+                        service: VmManager
+                        method: createPool
+                        params:
+                          name: "{{ name }}"
+                          type: "netfs"
+                          path: "{{ path }}"
+                          purpose: "{{ purpose }}"
+                          source_host: "{{ source_host }}"
+                          source_dir: "{{ source_dir }}"
+                          source_format: "{{ source_format }}"
+                          source_username: "{{ source_username }}"
+                          source_password: "{{ source_password }}"
+                        progressMessage: _("Adding network filesystem pool ...")
+                        successNotification: _("Network filesystem pool has been added.")
+      - type: menu
+        icon: mdi:rotate-left
+        tooltip: _("State")
+        enabledConstraints:
+          minSelected: 1
+          maxSelected: 1
+        actions:
+          - text: _("Start")
+            icon: mdi:play
+            execute:
+              type: request
+              request:
+                service: VmManager
+                method: poolCommand
+                params:
+                  name: "{{ _selected[0].name }}"
+                  command: "start"
+                progressMessage: _("Starting pool ...")
+                successNotification: _("Pool has been started.")
+                task: false
+          - text: _("Stop")
+            icon: mdi:stop
+            execute:
+              type: request
+              request:
+                service: VmManager
+                method: poolCommand
+                params:
+                  name: "{{ _selected[0].name }}"
+                  command: "stop"
+                progressMessage: _("Stopping pool ...")
+                successNotification: _("Pool has been stopped.")
+                task: false
+          - text: _("Refresh")
+            icon: mdi:refresh
+            execute:
+              type: request
+              request:
+                service: VmManager
+                method: poolCommand
+                params:
+                  name: "{{ _selected[0].name }}"
+                  command: "refresh"
+                progressMessage: _("Refreshing pool ...")
+                successNotification: _("Pool has been refreshed.")
+                task: false
+      - type: iconButton
+        icon: mdi:folder-key
+        tooltip: _("Fix permissions")
+        execute:
+          type: request
+          request:
+            service: VmManager
+            method: poolCommand
+            params:
+              name: "{{ _selected[0].name }}"
+              command: "fixpermissions"
+            progressMessage: _("Fixing directory permissions ...")
+            successNotification: _("Directory permissions have been fixed.")
+        enabledConstraints:
+          minSelected: 1
+          maxSelected: 1
+      - type: iconButton
+        icon: delete
+        tooltip: _("Delete")
+        execute:
+          type: request
+          request:
+            service: VmManager
+            method: poolCommand
+            params:
+              name: "{{ _selected[0].name }}"
+              command: "delete"
+            progressMessage: _("Deleting pool ...")
+            successNotification: _("Pool has been deleted.")
+        enabledConstraints:
+          minSelected: 1
+          maxSelected: 1
+          constraint:
+            - operator: ne
+              arg0:
+                prop: state
+              arg1: "Active"

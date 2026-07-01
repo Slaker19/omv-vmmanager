@@ -1,0 +1,35 @@
+# omv-vmmanager Caddyfile
+#
+# Terminates TLS with a long-lived self-signed cert that includes
+# the mDNS hostname (hostname.local) so it works on any network
+# without reconfiguring.
+#
+# Layout:
+#   :80  -> 301 redirect to https://
+#   :443 -> reverse-proxy to 127.0.0.1:8080 (omv-vmmanager)
+#
+# When behind OMV's nginx reverse-proxy (the plugin embeds the
+# UI in an iframe), OMV's nginx sets proxy_hide_header X-Frame-Options
+# so the OMV UI can frame us. We also set SAMEORIGIN so other sites
+# cannot frame us.
+
+# HTTP -> HTTPS
+:80 {
+	redir https://{host}{uri} permanent
+}
+
+# HTTPS reverse proxy
+:443 {
+	tls /etc/caddy/certs/vmmanager.crt /etc/caddy/certs/vmmanager.key
+
+	header {
+		# Allow OMV's nginx reverse-proxy to embed this UI in an iframe.
+		# The "SAMEORIGIN" policy prevents arbitrary third-party sites
+		# from framing the management interface.
+		X-Frame-Options "SAMEORIGIN"
+	}
+
+	reverse_proxy 127.0.0.1:8080
+}
+
+

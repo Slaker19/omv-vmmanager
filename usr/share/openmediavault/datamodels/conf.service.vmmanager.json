@@ -1,0 +1,19 @@
+{
+  "type": "config",
+  "id": "conf.service.vmmanager",
+  "queryinfo": {
+    "xpath": "/config/services/vmmanager",
+    "iterable": false,
+    "idproperty": "enable"
+  },
+  "properties": {
+    "enable":            { "type": "boolean", "default": true },
+    "httpsMode":         { "type": "string",  "default": "managed", "enum": ["none","managed"] },
+    "httpsPort":         { "type": "integer", "default": 8443, "minimum": 1, "maximum": 65535 },
+    "sslcertificateref": { "type": "string",  "default": "",
+                            "oneOf": [{"type": "string", "format": "uuidv4"},{"type": "string", "maxLength": 0}] },
+    "dataDir":           { "type": "string", "default": "/opt/openmediavault/vmmanager", "maxLength": 256 },
+    "port":              { "type": "integer", "default": 8080, "minimum": 1, "maximum": 65535 },
+    "bind":              { "type": "string", "default": "127.0.0.1", "format": "ipv4" }
+  }
+}

@@ -1,0 +1,32 @@
+version: "1.0"
+type: component
+data:
+  name: omv-services-vmmanager-networkxml-edit-page
+  type: formPage
+  config:
+    request:
+      service: VmManager
+      get:
+        method: getNetworkXml
+        params:
+          name: "{{ query.name }}"
+      post:
+        method: putNetworkXml
+        params:
+          name: "{{ query.name }}"
+    fields:
+      - type: textarea
+        name: netxml
+        label: _("Network XML")
+        validators:
+          - type: required
+          - validator: pattern
+            arg: '^<network>'
+        hint: _("Edit the libvirt network XML configuration. Invalid XML may cause the network to stop functioning.")
+      - type: html
+        name: warnings
+        label: _("Warnings")
+        value: '<div class="omv-message omv-message-warning">{{ "Editing XML may have unintended consequences. Only edit if you know libvirt configuration syntax." | translate }}</div>'
+    buttons:
+      - template: submit
+      - template: cancel

@@ -1,0 +1,68 @@
+version: "1.0"
+type: component
+data:
+  name: omv-services-vmmanager-network-access-form-page
+  type: formPage
+  config:
+    request:
+      service: VmManager
+      get:
+        method: getSettings
+      post:
+        method: setSettings
+    fields:
+      - type: select
+        name: httpsMode
+        label: _("HTTPS mode")
+        store:
+          data:
+            - ["none", "Disabled (HTTP only)"]
+            - ["managed", "Managed certificate (OMV)"]
+        hint: _("None = HTTP only, no TLS. Managed = use a certificate from the OMV certificate store (Service -> SSL).")
+
+      - type: numberInput
+        name: httpsPort
+        label: _("Frontend port")
+        validators:
+          min: 1024
+          max: 65535
+          patternType: integer
+          required: true
+        hint: _("Public TCP port (1024-65535). With HTTPS managed, Caddy reverse-proxies HTTPS here. With HTTPS disabled, the Go backend listens directly here with HTTP.")
+
+      - type: sslCertSelect
+        name: sslcertificateref
+        label: _("Certificate")
+        hint: _("Select an SSL certificate from the OMV certificate store.")
+        hasEmptyOption: true
+        modifiers:
+          - type: visible
+            constraint:
+              operator: eq
+              arg0:
+                prop: httpsMode
+              arg1: managed
+
+      - type: numberInput
+        name: port
+        label: _("Backend upstream port")
+        validators:
+          min: 1024
+          max: 65535
+          patternType: integer
+          required: true
+        modifiers:
+          - type: visible
+            constraint:
+              operator: eq
+              arg0:
+                prop: httpsMode
+              arg1: managed
+        hint: _("Internal port the Go backend listens on when behind the Caddy reverse proxy (1024-65535). Not used when HTTPS is disabled.")
+
+    buttons:
+      - template: submit
+      - template: cancel
+        execute:
+          type: url
+          url: "/services/vmmanager"

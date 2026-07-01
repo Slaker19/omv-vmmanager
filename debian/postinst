@@ -1,0 +1,88 @@
+#!/bin/sh
+set -e
+. /etc/default/openmediavault
+. /usr/share/openmediavault/scripts/helper-functions
+
+case "$1" in
+    configure)
+        # 1) Ensure data dir files that are NOT created by preinst.
+        if [ ! -f /opt/openmediavault/vmmanager/cifs-secrets.json ]; then
+            echo '{}' > /opt/openmediavault/vmmanager/cifs-secrets.json
+            chmod 600 /opt/openmediavault/vmmanager/cifs-secrets.json
+        fi
+
+        # 2) Create the confdb root and run any migrations.
+        omv-confdbadm create "conf.service.vmmanager" || :
+        if [ -n "$2" ]; then
+            omv-confdbadm migrate "conf.service.vmmanager" "$2" || :
+        fi
+
+        # 3) Migrate server.bind_addr in config.json if it still has the old
+        #    default "0.0.0.0" (pre-2026-07 schema). The backend must listen
+        #    on loopback; the reverse proxy (Caddy/nginx) is the public face.
+        if [ -f /opt/openmediavault/vmmanager/config.json ]; then
+            python3 -c "
+import json
+path = '/opt/openmediavault/vmmanager/config.json'
+try:
+    with open(path) as f:
+        cfg = json.load(f)
+    if cfg.get('values', {}).get('server.bind_addr') == '0.0.0.0':
+        cfg['values']['server.bind_addr'] = '127.0.0.1'
+        cfg['saved_at'] = __import__('datetime').datetime.now(__import__('datetime').timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        with open(path, 'w') as f:
+            json.dump(cfg, f, indent=2)
+except Exception:
+    pass
+" 2>/dev/null || true
+        fi
+
+        # 4) Apply Salt state — drop-in, nginx, service enable+start.
+        omv-salt deploy run --no-color --quiet vmmanager || :
+
+        # 5) Wait for the Go backend to respond (max 30s).
+        for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8080/api/health >/dev/null 2>&1; then break; fi
+            sleep 1
+        done
+
+        # 6) Provision API key if not already present.
+        if [ ! -f /etc/openmediavault-vmmanager/apikey.key ]; then
+            install -d -m 0700 /etc/openmediavault-vmmanager
+            # The backend generates a random admin password on first boot and
+            # persists it to {dataDir}/admin-password.initial. Read it here.
+            ADMIN_PW_FILE="/opt/openmediavault/vmmanager/admin-password.initial"
+            ADMIN_PW="admin"
+            if [ -r "$ADMIN_PW_FILE" ]; then
+                ADMIN_PW=$(head -1 "$ADMIN_PW_FILE")
+            fi
+            admin_jwt=$(curl -fsS -X POST http://127.0.0.1:8080/api/auth/login \
+                -H "Content-Type: application/json" \
+                -d "{\"username\":\"admin\",\"password\":\"${ADMIN_PW}\"}" 2>/dev/null \
+                | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
+            if [ -n "$admin_jwt" ]; then
+                apikey=$(curl -fsS -X POST http://127.0.0.1:8080/api/tokens/ \
+                    -H "Authorization: Bearer $admin_jwt" \
+                    -H "Content-Type: application/json" \
+                    -d '{"name":"omv-plugin-bridge","scopes":["*"]}' 2>/dev/null \
+                    | sed -n 's/.*"plain":"\([^"]*\)".*/\1/p')
+                if [ -n "$apikey" ]; then
+                    printf '%s\n' "$apikey" > /etc/openmediavault-vmmanager/apikey.key
+                    chmod 0600 /etc/openmediavault-vmmanager/apikey.key
+                fi
+            fi
+        fi
+
+        # 7) Reload omv-engined so it picks up the new RPC class.
+        systemctl try-restart omv-engined || :
+        ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+exit 0

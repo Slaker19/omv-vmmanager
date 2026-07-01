@@ -1,0 +1,8 @@
+# Systemd drop-in override for omv-vmmanager when running under OMV.
+# Installed by Salt, overrides only what OMV manages.
+[Service]
+Environment=DATA_DIR={{ data_dir }}
+Environment=BIND_ADDR=127.0.0.1
+Environment=PORT={{ port }}
+# Allow long-running noVNC WebSocket sessions
+TimeoutStopSec=300

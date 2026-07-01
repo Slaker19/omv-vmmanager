@@ -1,0 +1,32 @@
+Source: openmediavault-vmmanager
+Section: net
+XB-Plugin-Section: utilities
+Priority: optional
+Maintainer: omv-vmmanager <alvinpp1908@gmail.com>
+Build-Depends: debhelper-compat (= 13), dh-sequence-single-binary
+Standards-Version: 4.7.2
+Homepage: https://github.com/omv-vmmanager/omv-vmmanager
+
+Package: openmediavault-vmmanager
+Architecture: all
+Depends: ${misc:Depends},
+         caddy,
+         curl,
+         ca-certificates,
+         libvirt-clients,
+         libvirt-daemon-system,
+         ovmf,
+         qemu-system-x86,
+         qemu-system-modules-spice,
+         qemu-utils,
+         swtpm,
+         openmediavault (>= 8),
+         openmediavault-sharerootfs,
+         php-curl,
+         php-libvirt-php,
+         php-xml
+Description: Virtual machine management plugin for OpenMediaVault.
+ omv-vmmanager provides a modern web UI for managing KVM/QEMU virtual
+ machines via libvirt. It includes OVA import/export, backup, cloning,
+ noVNC web console, and storage pool management. It runs as a Go
+ backend and embeds a Svelte 5 frontend.

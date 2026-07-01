@@ -1,0 +1,16 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    install|upgrade)
+        # Create directories required by the systemd unit's ReadWritePaths
+        # before the service unit is visible to systemd. Without these,
+        # systemd fails with "Failed to set up mount namespacing" when it
+        # attempts to start the service before postinst runs.
+        install -d -m 0755 /opt/omv-vmmanager 2>/dev/null || true
+        install -d -m 0755 /opt/openmediavault/vmmanager 2>/dev/null || true
+        install -d -m 0755 /opt/openmediavault/vmmanager/logs /opt/openmediavault/vmmanager/pools 2>/dev/null || true
+        ;;
+esac
+
+exit 0

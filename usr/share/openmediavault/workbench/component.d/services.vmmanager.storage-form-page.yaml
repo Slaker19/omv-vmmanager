@@ -1,0 +1,27 @@
+version: "1.0"
+type: component
+data:
+  name: omv-services-vmmanager-storage-form-page
+  type: formPage
+  config:
+    request:
+      service: VmManager
+      get:
+        method: getSettings
+      post:
+        method: setSettings
+    fields:
+      - type: textInput
+        name: dataDir
+        label: _("Data directory")
+        validators:
+          required: true
+          maxLength: 256
+        hint: _("Absolute path where VMs, disks, ISOs, and metadata are stored. Trailing slashes are automatically stripped; double slashes are collapsed. Do not use a system directory.")
+
+    buttons:
+      - template: submit
+      - template: cancel
+        execute:
+          type: url
+          url: "/services/vmmanager"
